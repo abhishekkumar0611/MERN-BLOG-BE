@@ -4,7 +4,7 @@ const { mediaUpload } = require('../middleware/multerMiddleware');
 
 const {
   createPost,
-  getPosts,
+  getUserPosts,
   getPostById,
   updatePost,
   deletePost,
@@ -13,26 +13,34 @@ const {
   getPostsByCategory,
   getPostsByTag,
   searchPost,
-  getTrendingPosts
+  getTrendingPosts,
+  getPosts,
+  
 } = require('../controllers/postController');
 
 const { verifyUser } = require('../middleware/auth');
 
 // Public routes
-router.get('/', getPosts);
+
+router.get("/mine", verifyUser, getUserPosts); 
+router.get("/", verifyUser, getPosts); 
+
+router.get("/posts/:id", verifyUser, getPostById);
+
+
 router.get('/category/:categoryId', getPostsByCategory);
 router.get('/tag/:tagId', getPostsByTag);
 router.get('/search', searchPost);
 router.get('/trending', getTrendingPosts);
-router.get('/:id', getPostById);
+
 
 // Protected routes (need authentication)
 router.post('/', verifyUser, mediaUpload.single('media'), createPost);
 
 router.put("/:id", verifyUser, mediaUpload.single('media'), updatePost);
 
-
 router.delete('/:id', verifyUser, deletePost);
+
 router.put('/:id/like', verifyUser, likePost);
 router.put('/:id/unlike', verifyUser, unlikePost);
 

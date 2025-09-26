@@ -1,6 +1,6 @@
 const Comment = require('../models/commentModel');
 
-exports.createComment = async( req, res) => {
+ exports.createComment = async( req, res) => {
     try {
     const { postId, content } = req.body;
 
@@ -11,7 +11,7 @@ exports.createComment = async( req, res) => {
 
     const comment = await Comment.create( {
         postId,
-        userId: req.user.id,
+        userId: req.user._id,
         content
     });
 
@@ -20,7 +20,9 @@ exports.createComment = async( req, res) => {
  catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
-};
+}; 
+
+
 
 exports.getCommentsByPost = async( req, res) => {
     const { postId } = req.params;

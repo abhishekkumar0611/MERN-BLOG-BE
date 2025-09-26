@@ -3,6 +3,7 @@ const Cloudinary = require('../config/cloudinary');
 const Category = require('../models/categoryModel');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const { matchesGlob } = require('path');
 
 
 
@@ -68,19 +69,70 @@ exports.createPost = async (req, res) => {
 
 
 
-
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
-    .populate("category", "name")
-    .populate("tags", "name")
-    res.json({
-      data: posts
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [posts, totalPosts] = await Promise.all([
+      Post.find()
+        .populate("category", "name")
+        .populate("tags", "name")
+        .populate("author", "userName email")
+        .populate("comments.userId", "userName email") //  populate user inside comments
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments()
+    ]);
+
+    return res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(totalPosts / limit),
+      totalPosts
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    return res.status(500).json({ message: error.message });
   }
 };
+
+
+
+exports.getUserPosts = async (req, res) => {
+  try {
+    const userId = req.user._id; // set in authMiddleware
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    // Find only posts authored by the logged-in user
+    const posts = await Post.find({ author: userId })
+      .populate("category", "name")
+      .populate("tags", "name")
+      .populate("author", "userName")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Post.countDocuments({ author: userId });
+
+    res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalPosts: total,
+    });
+  } catch (err) {
+    console.error("Error fetching user posts:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
+
+
 
 exports.getPostById = async (req, res) => {
   try {

@@ -1,5 +1,15 @@
 const mongoose = require("mongoose");
 
+
+
+const commentSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    text: { type: String, required: true },
+  },
+  { timestamps: true }
+);
+
 const postSchema = new mongoose.Schema(
   {
     title: {
@@ -23,7 +33,7 @@ const postSchema = new mongoose.Schema(
       },
     ],
     author: {
-      type: mongoose.Schema.Types.ObjectId,
+      type:  mongoose.Schema.Types.ObjectId ,
       ref: "User",
       required: true,
     },
@@ -31,7 +41,15 @@ const postSchema = new mongoose.Schema(
       { 
         type: String, required: true
       },
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    comments: [commentSchema],
   },
+  
   { timestamps: true }
 );
 
