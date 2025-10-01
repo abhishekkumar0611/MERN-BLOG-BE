@@ -86,31 +86,46 @@ exports.deleteUser = async (req, res) => {
 
 exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id, "userName email role").select('-password');
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({ success: true,  user: user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Update user profile (bio, avatar)
+
+
+// Update profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { bio, avatar } = req.body;
+    const { userName, email } = req.body;
 
+    if (!userName || !email) {
+      return res.status(400).json({ message: "Username and email are required" });
+    }
+
+    // Find and update logged-in user
     const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { bio, avatar },
-      { new: true }
-    ).select('-password');
+      req.user._id, // coming from auth middleware
+      
+      { userName, email },
+      { new: true, runValidators: true } // return updated doc
+    ).select("-password"); // don't return password
+  
 
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({
+    
+      message: "Profile updated successfully",
+      user: updatedUser,
+     
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+

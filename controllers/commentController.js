@@ -1,26 +1,34 @@
 const Comment = require('../models/commentModel');
+const Post = require('../models/postModel')
 
- exports.createComment = async( req, res) => {
-    try {
-    const { postId, content } = req.body;
+exports.createComment = async (req, res) => {
+  try {
+    const { content } = req.body;
+    const { postId } = req.params; 
+   
+    if (!postId || !content) {
+      return res.status(400).json({ message: "postId and content are required" });
+    }
 
-
-    if ( !postId || !content) {
-        return res.status(400).json({ message: 'postId and content are required' });
-    };
-
-    const comment = await Comment.create( {
-        postId,
-        userId: req.user._id,
-        content
+    const newComment = await Comment.create({
+      postId,
+      userId: req.user._id,
+      content,
     });
 
-    res.status(201).json(comment)
- }
- catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
-    }
-}; 
+    const populatedComment = await newComment.populate("userId", "userName email");
+
+    await Post.findByIdAndUpdate(postId, { $push: { comments: newComment._id } });
+
+    res.status(201).json({
+      message: "Comment created successfully",
+      comment: populatedComment,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 
 
 
@@ -32,6 +40,7 @@ exports.getCommentsByPost = async( req, res) => {
 
 };
 
+// Update Comment
 exports.updateComment = async (req, res) => {
   try {
     const { id } = req.params; // comment id
@@ -41,13 +50,17 @@ exports.updateComment = async (req, res) => {
       return res.status(400).json({ message: "Content is required" });
     }
 
-    const comment = await Comment.findById(id);
+    const comment = await Comment.findById(id).populate("postId", "author"); // include post's author
     if (!comment) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    
-    if (comment.userId.toString() !== req.user.id && req.user.role !== "admin") {
+    // Check permission
+    const isOwner = comment.userId.toString() === req.user._id.toString();
+    const isPostAuthor = comment.postId.author.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isPostAuthor && !isAdmin) {
       return res.status(403).json({ message: "Not authorized to update this comment" });
     }
 
@@ -60,25 +73,29 @@ exports.updateComment = async (req, res) => {
   }
 };
 
+// Delete Comment
+exports.deleteComment = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-exports.deleteComment = async(req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
-        const isAdmin = req.user.isAdmin;
-
-        const comment = await Comment.findById(id);
-        if( !comment) return res.status(200).json({ message: 'Comment not found'});
-
-        if (comment.userId.toString() !== userId) {
-            return res.status(500).json( {message: 'You are not allowed to delete this comment' })
-        }
-
-        await Comment.deleteOne();
-        res.status(201).json({ message: 'Comment deleted successfully'})
-       return res.json() 
-    } catch (error) {
-        res.status(500).json( { message: 'Error deleting comment', error})
+    const comment = await Comment.findById(id).populate("postId", "author");
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
     }
+
+    // Check permission
+    const isOwner = comment.userId.toString() === req.user._id.toString();
+    const isPostAuthor = comment.postId.author.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isPostAuthor && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized to delete this comment" });
+    }
+
+    await comment.deleteOne();
+    res.json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting comment", error: error.message });
+  }
 };
 

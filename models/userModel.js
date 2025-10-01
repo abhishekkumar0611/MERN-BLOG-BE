@@ -1,35 +1,45 @@
 const mongoose = require('mongoose');
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
-const userSchema = new mongoose.Schema({
-  id: {                     
-    type: Number,
-    unique: true
+const userSchema = new mongoose.Schema(
+  {
+    // Auto-incremented numeric ID
+    id: {
+      type: Number,
+      unique: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true, // normalize emails
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin", "editor", "author"],
+      default: "user",
+    },
+    profile: {
+      type: String,
+      default: "",
+    },
+    // avatar: { type: String, default: "" } // optional field if you add profile picture
   },
-  userName: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: { 
-    type: String, 
-    enum: ["user", "admin", "editor", "author"], 
-    default: "user" 
-  },
-  bio: { type: String, default: "" },
-  avatar: { type: String, default: "" }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-// Auto-increment 'id' field
-userSchema.plugin(AutoIncrement, { inc_field: 'id' });
+// Auto-increment plugin for "id" field
+userSchema.plugin(AutoIncrement, { inc_field: "id" });
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

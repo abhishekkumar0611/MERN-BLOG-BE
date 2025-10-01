@@ -80,25 +80,28 @@ exports.getPosts = async (req, res) => {
         .populate("category", "name")
         .populate("tags", "name")
         .populate("author", "userName email")
-        .populate("comments.userId", "userName email") //  populate user inside comments
+        .populate({
+          path: "comments", // make sure Post model has a virtual for comments
+          populate: { path: "userId", select: "userName email" },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Post.countDocuments()
+
+      Post.countDocuments(),
     ]);
 
-    return res.json({
+    res.json({
       posts,
       currentPage: page,
       totalPages: Math.ceil(totalPosts / limit),
-      totalPosts
+      totalPosts,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: error.message });
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ message: error.message });
   }
 };
-
 
 
 exports.getUserPosts = async (req, res) => {

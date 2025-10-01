@@ -17,11 +17,11 @@ router.get('/', verifyUser, verifyAdmin, getAllUsers);
 router.get('/:id', verifyUser, verifyAdmin, getUsersById);
 
 // User routes
-router.put('/:id', verifyUser, updateUser);
+//router.put('/:id', verifyUser, updateUser);
 router.delete('/:id', verifyUser, deleteUser);
 
 // Profile routes
-router.get('/profile', verifyUser, getUserProfile);
+router.get('/auth/me', verifyUser, getUserProfile);
 router.put('/update', verifyUser, updateProfile);
 
 module.exports = router;

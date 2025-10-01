@@ -5,12 +5,13 @@ const {
      createComment, 
      getCommentsByPost, 
      updateComment, 
-     deleteComment } = require('../controllers/commentController');
+     deleteComment, 
+     } = require('../controllers/commentController');
 
 const { verifyUser } = require('../middleware/auth'); 
 
 
-router.post('/', verifyUser, createComment);
+router.post('/:postId', verifyUser, createComment);
 router.get('/:postId', getCommentsByPost);
 router.put('/:id', verifyUser, updateComment);
 router.delete('/:id', verifyUser, deleteComment);
