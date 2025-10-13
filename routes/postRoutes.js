@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { mediaUpload } = require('../middleware/multerMiddleware');
+const { mediaUpload } = require("../middleware/multerMiddleware");
 
 const {
   createPost,
@@ -15,33 +15,24 @@ const {
   searchPost,
   getTrendingPosts,
   getPosts,
-  
-} = require('../controllers/postController');
+} = require("../controllers/postController");
 
-const { verifyUser } = require('../middleware/auth');
+const { verifyUser } = require("../middleware/auth");
 
 // Public routes
+router.get("/", getPosts); 
+router.get("/mine", verifyUser, getUserPosts);
+router.get("/:id", getPostById);
+router.get("/category/:categoryId", getPostsByCategory);
+router.get("/tag/:tagId", getPostsByTag);
+router.get("/search", searchPost);
+router.get("/trending", getTrendingPosts);
 
-router.get("/mine", verifyUser, getUserPosts); 
-router.get("/", verifyUser, getPosts); 
-
-router.get("/posts/:id", verifyUser, getPostById);
-
-
-router.get('/category/:categoryId', getPostsByCategory);
-router.get('/tag/:tagId', getPostsByTag);
-router.get('/search', searchPost);
-router.get('/trending', getTrendingPosts);
-
-
-// Protected routes (need authentication)
-router.post('/', verifyUser, mediaUpload.single('media'), createPost);
-
-router.put("/:id", verifyUser, mediaUpload.single('media'), updatePost);
-
-router.delete('/:id', verifyUser, deletePost);
-
-router.put('/:id/like', verifyUser, likePost);
-router.put('/:id/unlike', verifyUser, unlikePost);
+// Protected routes
+router.post("/", verifyUser, mediaUpload.single("media"), createPost);
+router.put("/:id", verifyUser, mediaUpload.single("media"), updatePost);
+router.delete("/:id", verifyUser, deletePost);
+router.put("/:id/like", verifyUser, likePost);
+router.put("/:id/unlike", verifyUser, unlikePost);
 
 module.exports = router;

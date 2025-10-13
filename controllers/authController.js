@@ -53,51 +53,6 @@ exports.registerUser = async (req, res) => {
 };
 
 
-exports.loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.cookie("token", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
-  maxAge: 24 * 60 * 60 * 1000,
-});
-
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      user: {
-        _id: user._id,
-        userName: user.userName,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    console.error('Login error:', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-
 exports.getLoggedInUser = async (req, res) => {
   try {
     if (!req.user) {
@@ -127,4 +82,57 @@ exports.logout = (req, res) => {
     sameSite: 'strict',
   });
   res.json({ message: 'Logged out successfully' });
+};
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate inputs
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email }).select("+password"); 
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Send response without password
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        userName: user.userName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
